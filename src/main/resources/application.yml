@@ -34,6 +34,8 @@ app:
       read: 1.0
       like: 3.0
       share: 5.0
+    serendipity:
+      quota: 0.1
   test-data:
     articles:
       enabled: false

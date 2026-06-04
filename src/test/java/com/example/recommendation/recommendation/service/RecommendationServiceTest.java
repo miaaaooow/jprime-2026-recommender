@@ -41,12 +41,13 @@ class RecommendationServiceTest {
         recommendationService = new RecommendationService(
                 articleRepository,
                 userProfileService,
-                similarityModelRegistry
+                similarityModelRegistry,
+                recommendationProperties
         );
     }
 
     @Test
-    void recommendForUserRanksArticlesByProfileOverlap() {
+    void recommendForUserRanksFamiliarArticlesAheadOfSerendipity() {
         UserProfileDocument profile = new UserProfileDocument();
         profile.setUserId(3L);
         profile.setSimilarityModelKey("fixed-weight");
@@ -67,10 +68,36 @@ class RecommendationServiceTest {
 
         List<RecommendationResponse> recommendations = recommendationService.recommendForUser(3L, 5);
 
-        assertThat(recommendations).hasSize(1);
+        assertThat(recommendations).hasSize(2);
         assertThat(recommendations.get(0).articleId()).isEqualTo("candidate-1");
         assertThat(recommendations.get(0).matchedTopics()).containsExactly("ai", "search");
         assertThat(recommendations.get(0).matchedTags()).containsExactly("ml", "ranking");
         assertThat(recommendations.get(0).score()).isGreaterThan(0.0);
+        assertThat(recommendations.get(1).articleId()).isEqualTo("candidate-2");
+        assertThat(recommendations.get(1).matchedTopics()).isEmpty();
+        assertThat(recommendations.get(1).matchedTags()).isEmpty();
+        assertThat(recommendations.get(1).score()).isEqualTo(0.0);
+    }
+
+    @Test
+    void recommendForUserDoesNotInjectSerendipityWhenLimitIsOne() {
+        UserProfileDocument profile = new UserProfileDocument();
+        profile.setUserId(3L);
+        profile.setSimilarityModelKey("fixed-weight");
+        profile.setLikedArticleIds(List.of("liked-1"));
+        profile.setTopicWeights(Map.of("ai", 1.0));
+        profile.setTagWeights(Map.of("ml", 1.0));
+
+        when(userProfileService.getProfile(3L)).thenReturn(profile);
+        when(articleRepository.findAll()).thenReturn(List.of(
+                new ArticleDocument("liked-1", "Seen article", "...", List.of("ai"), List.of("ml"), Instant.now()),
+                new ArticleDocument("candidate-1", "AI ranking systems", "...", List.of("ai"), List.of("ml"), Instant.now()),
+                new ArticleDocument("candidate-2", "Gardening tips", "...", List.of("gardening"), List.of("plants"), Instant.now())
+        ));
+
+        List<RecommendationResponse> recommendations = recommendationService.recommendForUser(3L, 1);
+
+        assertThat(recommendations).hasSize(1);
+        assertThat(recommendations.get(0).articleId()).isEqualTo("candidate-1");
     }
 }

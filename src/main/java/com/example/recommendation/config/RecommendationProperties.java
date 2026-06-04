@@ -11,6 +11,7 @@ public class RecommendationProperties {
     private String similarityModel = "fixed-weight";
     private final LabelWeights labelWeights = new LabelWeights();
     private final InteractionWeights interactionWeights = new InteractionWeights();
+    private final Serendipity serendipity = new Serendipity();
 
     public String getSimilarityModel() {
         return similarityModel;
@@ -26,6 +27,10 @@ public class RecommendationProperties {
 
     public InteractionWeights getInteractionWeights() {
         return interactionWeights;
+    }
+
+    public Serendipity getSerendipity() {
+        return serendipity;
     }
 
     public static class LabelWeights {
@@ -86,6 +91,19 @@ public class RecommendationProperties {
                 case LIKE -> like;
                 case SHARE -> share;
             };
+        }
+    }
+
+    public static class Serendipity {
+
+        private double quota = 0.1;
+
+        public double getQuota() {
+            return quota;
+        }
+
+        public void setQuota(double quota) {
+            this.quota = quota;
         }
     }
 }

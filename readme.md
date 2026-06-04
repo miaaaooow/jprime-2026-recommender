@@ -47,6 +47,19 @@ Default interaction weights:
 - `LIKE`: `3.0`
 - `SHARE`: `5.0`
 
+## Serendipity
+
+To reduce article cold start, recommendations reserve a small exploration slice for articles that introduce tags or topics the user has not interacted with before.
+By default, `app.recommendation.serendipity.quota=0.1`, so recommendation lists try to allocate roughly 10% of their slots to these exploratory items while still keeping familiar matches first.
+
+The current implementation prefers:
+
+- articles with no topic or tag overlap at all
+- articles that introduce more unseen labels
+- newer articles when the novelty signal is otherwise similar
+
+Prioritizing globally new tags can be added later without changing the external API.
+
 ## Run
 
 Prerequisites:
