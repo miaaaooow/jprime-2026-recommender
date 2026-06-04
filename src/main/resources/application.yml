@@ -25,6 +25,15 @@ server:
   error:
     include-message: always
 app:
+  recommendation:
+    similarity-model: fixed-weight
+    label-weights:
+      topic: 0.7
+      tag: 0.3
+    interaction-weights:
+      read: 1.0
+      like: 3.0
+      share: 5.0
   test-data:
     articles:
       enabled: false

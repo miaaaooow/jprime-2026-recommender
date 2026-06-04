@@ -4,6 +4,7 @@ import com.example.recommendation.api.dto.CreateUserRequest;
 import com.example.recommendation.api.dto.UserResponse;
 import com.example.recommendation.api.dto.UserProfileResponse;
 import com.example.recommendation.profile.service.UserProfileService;
+import com.example.recommendation.user.model.UserArticleInteractionType;
 import com.example.recommendation.user.service.UserService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -38,9 +39,31 @@ public class UserController {
         return UserResponse.from(userService.getUser(userId));
     }
 
+    @PostMapping("/{userId}/reads/{articleId}")
+    public UserProfileResponse readArticle(@PathVariable Long userId, @PathVariable String articleId) {
+        return UserProfileResponse.from(userProfileService.recordInteraction(
+                userId,
+                articleId,
+                UserArticleInteractionType.READ
+        ));
+    }
+
     @PostMapping("/{userId}/likes/{articleId}")
     public UserProfileResponse likeArticle(@PathVariable Long userId, @PathVariable String articleId) {
-        return UserProfileResponse.from(userProfileService.likeArticle(userId, articleId));
+        return UserProfileResponse.from(userProfileService.recordInteraction(
+                userId,
+                articleId,
+                UserArticleInteractionType.LIKE
+        ));
+    }
+
+    @PostMapping("/{userId}/shares/{articleId}")
+    public UserProfileResponse shareArticle(@PathVariable Long userId, @PathVariable String articleId) {
+        return UserProfileResponse.from(userProfileService.recordInteraction(
+                userId,
+                articleId,
+                UserArticleInteractionType.SHARE
+        ));
     }
 
     @PostMapping("/{userId}/profile/rebuild")

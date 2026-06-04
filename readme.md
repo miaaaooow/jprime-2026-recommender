@@ -1,4 +1,6 @@
-# Recommendation App
+# Botev - The Content Recommender App that will Save Democracy
+
+Botev is a recommendation and ranking service for a higher-quality news aggregator.
 
 A small Spring Boot service that keeps:
 
@@ -6,16 +8,35 @@ A small Spring Boot service that keeps:
 - articles in Elasticsearch
 - user recommendation profiles in Elasticsearch
 
-The recommendation logic is intentionally simple: when a user likes articles, the service builds a profile from the frequency of article topics and tags. Recommendations are then ranked by cosine similarity between that profile and each unseen article.
+The recommendation logic (so far): user interactions build a topic/tag profile, and recommendations rank unseen articles by comparing their labels against that profile with a selectable similarity model.
+
+## Motivation
+
+Botev is intended to grow into a news aggregator that serves readers better than social platforms such as Facebook and X.
+The goal is to reward strong journalism with fairer access to advertising and reader revenue, while pushing the system toward quality instead of clickbait headlines and disinformation.
 
 ## Model
 
 - `UserEntity`: SQL record for a user
 - `UserArticleLikeEntity`: SQL record for a user liking an article
 - `ArticleDocument`: Elasticsearch document with `title`, `content`, `topics`, and `tags`
-- `UserProfileDocument`: Elasticsearch document with normalized topic/tag weights derived from liked articles
+- `UserProfileDocument`: Elasticsearch document with topic/tag weights derived from article interactions
 
 Topics and tags are accepted directly today. The `ArticleFeatureExtractor` abstraction is the seam for replacing manual metadata with NLP or LLM-based extraction from article text later.
+
+## Similarity Models
+
+The active recommendation model is selected with `app.recommendation.similarity-model`.
+
+- `fixed-weight`: default; builds a user profile from `READ`, `LIKE`, and `SHARE` interactions using fixed weights and scores articles by direct label overlap
+- `weighted-cosine`: interaction-aware profile plus cosine similarity scoring
+- `legacy-like-cosine`: preserves the old like-only cosine behavior as a third option
+
+Default interaction weights:
+
+- `READ`: `1.0`
+- `LIKE`: `3.0`
+- `SHARE`: `5.0`
 
 ## Run
 
@@ -73,10 +94,14 @@ curl -X POST http://localhost:8080/api/articles \
   }'
 ```
 
-Like an article and update the profile:
+Record interactions and update the profile:
 
 ```bash
+curl -X POST http://localhost:8080/api/users/1/reads/<article-id>
+
 curl -X POST http://localhost:8080/api/users/1/likes/<article-id>
+
+curl -X POST http://localhost:8080/api/users/1/shares/<article-id>
 ```
 
 Inspect the stored profile:
@@ -95,4 +120,4 @@ curl 'http://localhost:8080/api/users/1/recommendations?limit=5'
 
 - This implementation scans all articles when ranking recommendations. That is fine for a small app and easy to reason about.
 - For larger scale, push candidate generation into Elasticsearch and keep the Java service for profile updates, filtering, and reranking.
-- Because articles are stored in Elasticsearch, there is no SQL foreign key from likes to articles. The service validates article existence before saving a like.
+- Because articles are stored in Elasticsearch, there is no SQL foreign key from interactions to articles. The service validates article existence before saving an interaction.
