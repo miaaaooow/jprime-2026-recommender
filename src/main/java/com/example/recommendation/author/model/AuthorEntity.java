@@ -63,6 +63,10 @@ public class AuthorEntity {
         return internalRating;
     }
 
+    public void setInternalRating(double internalRating) {
+        this.internalRating = internalRating;
+    }
+
     public Instant getCreatedAt() {
         return createdAt;
     }

@@ -38,3 +38,5 @@ app:
     articles:
       enabled: false
       resource: classpath:testdata/articles.json
+      publishers-resource: classpath:testdata/publishers.json
+      authors-resource: classpath:testdata/authors.json

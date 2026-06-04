@@ -1,0 +1,10 @@
+[
+  { "name": "Elena Rossi", "publisherName": "North Star Dispatch", "internalRating": 84.0 },
+  { "name": "Daniel Cho", "publisherName": "North Star Dispatch", "internalRating": 81.0 },
+  { "name": "Mira Tsvetanova", "publisherName": "Signal Weekly", "internalRating": 88.0 },
+  { "name": "Samira Haddad", "publisherName": "Signal Weekly", "internalRating": 82.0 },
+  { "name": "Noor Bakshi", "publisherName": "Cedar Review", "internalRating": 86.0 },
+  { "name": "Leonie Weber", "publisherName": "Cedar Review", "internalRating": 83.0 },
+  { "name": "Ana Petrova", "publisherName": "Public Ledger", "internalRating": 90.0 },
+  { "name": "Tomas Iliev", "publisherName": "Public Ledger", "internalRating": 79.0 }
+]

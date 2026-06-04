@@ -69,9 +69,15 @@ Config:
 
 ## Sample Test Dataset
 
-A reusable article dataset lives at `src/main/resources/testdata/articles.json`.
-It includes tourism, cooking, fashion, and current affairs samples, with a few cross-topic articles so recommendation overlap is easier to test.
-Sample articles now also include author and publisher metadata.
+A reusable demo dataset lives under `src/main/resources/testdata/`.
+It includes:
+
+- `publishers.json`
+- `authors.json`
+- `articles.json`
+
+The startup loader seeds publishers and authors into SQL first, then writes the article dataset to Elasticsearch using the real generated author and publisher ids.
+The sample content covers tourism, cooking, fashion, and current affairs, with a few cross-topic articles so recommendation overlap is easier to test.
 
 Load it on startup only when you need it:
 
@@ -80,6 +86,7 @@ APP_TEST_DATA_ARTICLES_ENABLED=true mvn spring-boot:run
 ```
 
 The loader upserts the same article ids on each run, so local testing stays deterministic.
+Publisher and author records are also reused by name, and author ratings are refreshed from the dataset if they change.
 
 ## API
 
