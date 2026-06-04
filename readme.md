@@ -122,9 +122,15 @@ Prerequisites:
 
 - Java 17+
 - Maven 3.9+
-- Elasticsearch running locally on `http://localhost:9200`
+- Docker Desktop or Docker Engine with Compose support
 
-Start the app:
+Start Elasticsearch:
+
+```bash
+docker compose up -d elasticsearch
+```
+
+Then start the app:
 
 ```bash
 mvn spring-boot:run
