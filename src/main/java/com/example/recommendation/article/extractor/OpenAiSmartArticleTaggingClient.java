@@ -17,6 +17,7 @@ import java.util.Objects;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -28,6 +29,7 @@ public class OpenAiSmartArticleTaggingClient implements SmartArticleTaggingClien
     private final ObjectMapper objectMapper;
     private final HttpClient httpClient;
 
+    @Autowired
     public OpenAiSmartArticleTaggingClient(ArticleTaggingProperties properties, ObjectMapper objectMapper) {
         this(properties, objectMapper, HttpClient.newBuilder().build());
     }

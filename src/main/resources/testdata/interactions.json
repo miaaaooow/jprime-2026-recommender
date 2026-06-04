@@ -1,0 +1,17 @@
+[
+  { "username": "mila.travel", "articleId": "tourism-lisbon-slow-weekend", "interactionType": "LIKE" },
+  { "username": "mila.travel", "articleId": "tourism-aegean-shoulder-season", "interactionType": "READ" },
+  { "username": "mila.travel", "articleId": "fashion-travel-capsule-wardrobe", "interactionType": "SHARE" },
+
+  { "username": "ivo.cook", "articleId": "cooking-lemon-orzo-weeknight", "interactionType": "LIKE" },
+  { "username": "ivo.cook", "articleId": "cooking-market-soup-routine", "interactionType": "READ" },
+  { "username": "ivo.cook", "articleId": "tourism-taipei-food-weekend", "interactionType": "SHARE" },
+
+  { "username": "noa.style", "articleId": "fashion-vest-layering", "interactionType": "LIKE" },
+  { "username": "noa.style", "articleId": "fashion-repair-economy", "interactionType": "READ" },
+  { "username": "noa.style", "articleId": "tourism-lisbon-slow-weekend", "interactionType": "SHARE" },
+
+  { "username": "petar.policy", "articleId": "current-affairs-city-heat-budgets", "interactionType": "LIKE" },
+  { "username": "petar.policy", "articleId": "fashion-repair-economy", "interactionType": "READ" },
+  { "username": "petar.policy", "articleId": "tourism-aegean-shoulder-season", "interactionType": "SHARE" }
+]

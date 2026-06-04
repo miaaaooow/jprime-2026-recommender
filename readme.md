@@ -1,4 +1,5 @@
-# Botev - The Content Recommender App that will Save Democracy
+# Botev - Revolutionizing Publishing for Good
+## The Content Recommender App that will Save Democracy
 
 Botev is a recommendation and ranking service for a higher-quality news aggregator.
 
@@ -150,14 +151,17 @@ It includes:
 - `publishers.json`
 - `authors.json`
 - `articles.json`
+- `users.json`
+- `interactions.json`
 
-The startup loader seeds publishers and authors into SQL first, then writes the article dataset to Elasticsearch using the real generated author and publisher ids.
+The startup loader seeds publishers, authors, users, and user interactions into SQL, then writes the article dataset to Elasticsearch using the real generated author and publisher ids.
 The sample content covers tourism, cooking, fashion, and current affairs, with a few cross-topic articles so recommendation overlap is easier to test.
+It also rebuilds the seeded user profiles on startup, so the dashboard can show user tags and recommendation previews immediately.
 
-Load it on startup only when you need it:
+The demo dataset is enabled by default. If you want to run without it:
 
 ```bash
-APP_TEST_DATA_ARTICLES_ENABLED=true mvn spring-boot:run
+APP_TEST_DATA_ARTICLES_ENABLED=false mvn spring-boot:run
 ```
 
 The loader upserts the same article ids on each run, so local testing stays deterministic.

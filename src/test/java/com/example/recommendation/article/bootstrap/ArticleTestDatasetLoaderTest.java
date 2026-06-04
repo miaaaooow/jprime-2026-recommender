@@ -5,39 +5,57 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import com.example.recommendation.article.model.ArticleDocument;
 import com.example.recommendation.article.repository.ArticleRepository;
 import com.example.recommendation.author.model.AuthorEntity;
 import com.example.recommendation.author.repository.AuthorRepository;
+import com.example.recommendation.profile.service.UserProfileService;
 import com.example.recommendation.publisher.model.PublisherEntity;
 import com.example.recommendation.publisher.repository.PublisherRepository;
+import com.example.recommendation.user.model.UserArticleInteractionEntity;
+import com.example.recommendation.user.model.UserArticleInteractionType;
+import com.example.recommendation.user.model.UserEntity;
+import com.example.recommendation.user.repository.UserArticleInteractionRepository;
+import com.example.recommendation.user.repository.UserRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.core.io.DefaultResourceLoader;
 
 class ArticleTestDatasetLoaderTest {
 
     @Test
-    void runSeedsPublishersAuthorsAndArticlesAsOneCatalog() throws Exception {
+    void runSeedsPublishersAuthorsArticlesUsersAndInteractionsAsOneCatalog() throws Exception {
         ArticleRepository articleRepository = mock(ArticleRepository.class);
         PublisherRepository publisherRepository = mock(PublisherRepository.class);
         AuthorRepository authorRepository = mock(AuthorRepository.class);
+        UserRepository userRepository = mock(UserRepository.class);
+        UserArticleInteractionRepository interactionRepository = mock(UserArticleInteractionRepository.class);
+        UserProfileService userProfileService = mock(UserProfileService.class);
         DefaultResourceLoader resourceLoader = new DefaultResourceLoader();
 
         Map<String, PublisherEntity> publishersByKey = new LinkedHashMap<>();
         Map<String, AuthorEntity> authorsByKey = new LinkedHashMap<>();
+        Map<String, UserEntity> usersByKey = new LinkedHashMap<>();
         AtomicLong publisherIds = new AtomicLong(1);
         AtomicLong authorIds = new AtomicLong(1);
+        AtomicLong userIds = new AtomicLong(1);
         List<ArticleDocument> savedArticles = new ArrayList<>();
+        List<UserArticleInteractionEntity> savedInteractions = new ArrayList<>();
+        Set<String> interactionKeys = new HashSet<>();
 
         when(publisherRepository.findByNameIgnoreCase(anyString())).thenAnswer(invocation ->
                 Optional.ofNullable(publishersByKey.get(normalizeKey(invocation.getArgument(0)))));
@@ -65,23 +83,56 @@ class ArticleTestDatasetLoaderTest {
             articles.forEach(savedArticles::add);
             return articles;
         });
+        when(userRepository.findByUsernameIgnoreCase(anyString())).thenAnswer(invocation ->
+                Optional.ofNullable(usersByKey.get(normalizeKey(invocation.getArgument(0)))));
+        when(userRepository.save(any(UserEntity.class))).thenAnswer(invocation -> {
+            UserEntity user = invocation.getArgument(0);
+            if (user.getId() == null) {
+                setId(user, userIds.getAndIncrement());
+            }
+            usersByKey.put(normalizeKey(user.getUsername()), user);
+            return user;
+        });
+        when(interactionRepository.existsByUserIdAndArticleIdAndInteractionType(anyLong(), anyString(), any()))
+                .thenAnswer(invocation -> interactionKeys.contains(interactionKey(
+                        invocation.getArgument(0),
+                        invocation.getArgument(1),
+                        invocation.getArgument(2)
+                )));
+        when(interactionRepository.save(any(UserArticleInteractionEntity.class))).thenAnswer(invocation -> {
+            UserArticleInteractionEntity interaction = invocation.getArgument(0);
+            savedInteractions.add(interaction);
+            interactionKeys.add(interactionKey(
+                    interaction.getUserId(),
+                    interaction.getArticleId(),
+                    interaction.getInteractionType()
+            ));
+            return interaction;
+        });
 
         ArticleTestDatasetLoader loader = new ArticleTestDatasetLoader(
                 articleRepository,
                 publisherRepository,
                 authorRepository,
+                userRepository,
+                interactionRepository,
+                userProfileService,
                 new ObjectMapper().findAndRegisterModules(),
                 resourceLoader,
                 "classpath:testdata/articles.json",
                 "classpath:testdata/publishers.json",
-                "classpath:testdata/authors.json"
+                "classpath:testdata/authors.json",
+                "classpath:testdata/users.json",
+                "classpath:testdata/interactions.json"
         );
 
         loader.run(new DefaultApplicationArguments(new String[0]));
 
         assertThat(publishersByKey).hasSize(4);
         assertThat(authorsByKey).hasSize(8);
+        assertThat(usersByKey).hasSize(4);
         assertThat(savedArticles).hasSize(11);
+        assertThat(savedInteractions).hasSize(12);
 
         ArticleDocument lisbon = savedArticles.stream()
                 .filter(article -> article.getId().equals("tourism-lisbon-slow-weekend"))
@@ -96,6 +147,19 @@ class ArticleTestDatasetLoaderTest {
         assertThat(lisbon.getAuthorId()).isEqualTo(
                 authorsByKey.get(authorKey(lisbon.getPublisherId(), "Elena Rossi")).getId()
         );
+
+        UserEntity mila = usersByKey.get(normalizeKey("mila.travel"));
+        assertThat(savedInteractions).anySatisfy(interaction -> {
+            assertThat(interaction.getUserId()).isEqualTo(mila.getId());
+            assertThat(interaction.getArticleId()).isEqualTo("tourism-lisbon-slow-weekend");
+            assertThat(interaction.getInteractionType()).isEqualTo(UserArticleInteractionType.LIKE);
+        });
+
+        ArgumentCaptor<Long> rebuiltUserIds = ArgumentCaptor.forClass(Long.class);
+        verify(userProfileService, times(4)).rebuildProfile(rebuiltUserIds.capture());
+        assertThat(rebuiltUserIds.getAllValues()).containsExactlyInAnyOrder(
+                usersByKey.values().stream().map(UserEntity::getId).toArray(Long[]::new)
+        );
     }
 
     private static String normalizeKey(String value) {
@@ -104,6 +168,10 @@ class ArticleTestDatasetLoaderTest {
 
     private static String authorKey(Long publisherId, String authorName) {
         return publisherId + ":" + normalizeKey(authorName);
+    }
+
+    private static String interactionKey(Long userId, String articleId, UserArticleInteractionType interactionType) {
+        return userId + ":" + articleId + ":" + interactionType.name();
     }
 
     private static void setId(Object target, Long id) {

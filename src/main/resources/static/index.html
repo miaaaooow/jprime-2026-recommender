@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Botev Dashboard</title>
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<div class="page-shell">
+    <header class="hero">
+        <div>
+            <p class="eyebrow">Botev Internal Dashboard</p>
+            <h1>Profiles, Articles, and Recommendation Preview</h1>
+            <p class="hero-copy">
+                Inspect how user tag profiles are built, browse the current article catalog,
+                and preview recommendations for a single reader before exposing them elsewhere.
+            </p>
+        </div>
+        <div class="hero-stats">
+            <article class="hero-stat">
+                <span class="stat-label">Users</span>
+                <strong id="userCount">0</strong>
+            </article>
+            <article class="hero-stat">
+                <span class="stat-label">Articles</span>
+                <strong id="articleCount">0</strong>
+            </article>
+            <article class="hero-stat">
+                <span class="stat-label">Selected User</span>
+                <strong id="selectedUserName">None</strong>
+            </article>
+        </div>
+    </header>
+
+    <main class="dashboard-grid">
+        <section class="panel panel-accent">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">User Profile</p>
+                    <h2>Tag and Topic Weights</h2>
+                </div>
+                <label class="user-select">
+                    <span>User</span>
+                    <select id="userSelect"></select>
+                </label>
+            </div>
+
+            <div id="profileSummary" class="profile-summary empty-state">
+                Select a user to load their profile.
+            </div>
+
+            <div class="profile-columns">
+                <article class="profile-card">
+                    <div class="section-title-row">
+                        <h3>Topics</h3>
+                        <span id="topicCount" class="section-count">0</span>
+                    </div>
+                    <div id="topicWeights" class="weight-list empty-state">No weighted topics yet.</div>
+                </article>
+
+                <article class="profile-card">
+                    <div class="section-title-row">
+                        <h3>Tags</h3>
+                        <span id="tagCount" class="section-count">0</span>
+                    </div>
+                    <div id="tagWeights" class="weight-list empty-state">No weighted tags yet.</div>
+                </article>
+            </div>
+
+            <article class="profile-card user-overview-card">
+                <div class="section-title-row">
+                    <h3>All Users</h3>
+                    <span class="section-count" id="profileCardCount">0</span>
+                </div>
+                <div id="userCards" class="user-cards empty-state">No users available.</div>
+            </article>
+        </section>
+
+        <section class="panel">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Recommendation Preview</p>
+                    <h2>Selected User Feed</h2>
+                </div>
+            </div>
+
+            <div id="recommendationMeta" class="recommendation-meta empty-state">
+                Select a user to preview recommendations.
+            </div>
+            <div id="recommendations" class="recommendations empty-state">No recommendations yet.</div>
+        </section>
+
+        <section class="panel panel-wide">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Article Catalog</p>
+                    <h2>Current Articles</h2>
+                </div>
+            </div>
+
+            <div id="articles" class="article-grid empty-state">No articles available.</div>
+        </section>
+    </main>
+</div>
+
+<script src="/app.js" defer></script>
+</body>
+</html>

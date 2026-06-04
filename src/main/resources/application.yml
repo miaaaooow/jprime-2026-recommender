@@ -49,7 +49,9 @@ app:
       quota: 0.1
   test-data:
     articles:
-      enabled: false
+      enabled: true
       resource: classpath:testdata/articles.json
       publishers-resource: classpath:testdata/publishers.json
       authors-resource: classpath:testdata/authors.json
+      users-resource: classpath:testdata/users.json
+      interactions-resource: classpath:testdata/interactions.json

@@ -34,6 +34,11 @@ public class UserController {
         return UserResponse.from(userService.createUser(request));
     }
 
+    @GetMapping
+    public java.util.List<UserResponse> getUsers() {
+        return userService.listUsers().stream().map(UserResponse::from).toList();
+    }
+
     @GetMapping("/{userId}")
     public UserResponse getUser(@PathVariable Long userId) {
         return UserResponse.from(userService.getUser(userId));
