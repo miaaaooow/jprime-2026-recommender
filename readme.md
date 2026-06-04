@@ -69,7 +69,25 @@ The `ArticleFeatureExtractor` abstraction is the seam for replacing the current 
 ## Internal Tagging
 
 `POST /api/internal/article-tagging` previews automatic tags for a draft article.
-The current implementation uses keyword heuristics over the title and content, merges the detected labels with any manually supplied labels, and falls back to generic labels when no stronger match is found.
+The default implementation uses keyword heuristics over the title and content, merges the detected labels with any manually supplied labels, and falls back to generic labels when no stronger match is found.
+
+An optional `SmartKeywordArticleFeatureExtractor` is also available.
+It keeps the keyword extractor as a baseline, then asks an LLM for additional topics and tags and merges the results back into the final label set.
+If smart tagging is disabled, misconfigured, or the remote call fails, the service falls back to the keyword-only result.
+
+Enable it with configuration such as:
+
+```yaml
+app:
+  tagging:
+    extractor: smart-keyword
+    smart:
+      enabled: true
+      provider: openai
+      model: gpt-5.4-nano
+      api-key: ${OPENAI_API_KEY:}
+      base-url: https://api.openai.com/v1/responses
+```
 
 ## Similarity Models
 

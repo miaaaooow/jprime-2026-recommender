@@ -25,6 +25,17 @@ server:
   error:
     include-message: always
 app:
+  tagging:
+    extractor: keyword
+    smart:
+      enabled: false
+      provider: openai
+      model: gpt-5.4-nano
+      api-key: ${OPENAI_API_KEY:}
+      base-url: https://api.openai.com/v1/responses
+      timeout: 10s
+      max-topics: 5
+      max-tags: 8
   recommendation:
     similarity-model: fixed-weight
     label-weights:
