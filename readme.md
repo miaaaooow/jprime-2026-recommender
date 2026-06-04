@@ -25,6 +25,44 @@ The goal is to reward strong journalism with fairer access to advertising and re
 - `ArticleDocument`: Elasticsearch document with `title`, `content`, `topics`, `tags`, `author`, and `publisher`
 - `UserProfileDocument`: Elasticsearch document with topic/tag weights derived from article interactions
 
+Diagram source: [docs/model-diagram.md](/Users/maria.mateva/Projects/jprime-2026-recommender/docs/model-diagram.md)
+
+```mermaid
+flowchart LR
+    subgraph SQL["SQL Database"]
+        U["UserEntity"]
+        UI["UserArticleInteractionEntity\nREAD | LIKE | SHARE"]
+        UL["UserArticleLikeEntity\nlegacy likes"]
+        P["PublisherEntity"]
+        A["AuthorEntity\ninternalRating"]
+    end
+
+    subgraph ES["Elasticsearch"]
+        AD["ArticleDocument\ntitle\ncontent\ntopics\ntags\nauthor\npublisher"]
+        UP["UserProfileDocument\ntopicWeights\ntagWeights\nread/like/share ids"]
+    end
+
+    subgraph Tagging["Tagging Flow"]
+        FE["ArticleFeatureExtractor"]
+    end
+
+    P -->|has many| A
+    P -->|publishes| AD
+    A -->|writes| AD
+
+    U -->|has many| UI
+    U -->|has many| UL
+    U -->|has one| UP
+
+    UI -->|references articleId| AD
+    UL -.->|legacy articleId reference| AD
+
+    UI -->|used to rebuild| UP
+    UL -.->|backward-compatible input| UP
+
+    FE -->|extracts topics/tags for new articles| AD
+```
+
 Topics and tags are still accepted directly, but new articles also go through an internal automatic tagging flow.
 The `ArticleFeatureExtractor` abstraction is the seam for replacing the current heuristic tagger with NLP or LLM-based extraction later.
 
