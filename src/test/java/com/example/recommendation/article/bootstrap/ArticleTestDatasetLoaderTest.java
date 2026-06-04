@@ -34,5 +34,11 @@ class ArticleTestDatasetLoaderTest {
         assertThat(articles)
                 .extracting(ArticleDocument::getTags)
                 .contains(List.of("resale", "repair", "consumer-trends", "luxury"));
+        assertThat(articles)
+                .extracting(ArticleDocument::getAuthorName)
+                .contains("Elena Rossi", "Mira Tsvetanova");
+        assertThat(articles)
+                .extracting(ArticleDocument::getPublisherName)
+                .contains("North Star Dispatch", "Signal Weekly");
     }
 }

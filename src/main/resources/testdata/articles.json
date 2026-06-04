@@ -5,6 +5,10 @@
     "content": "Lisbon rewards people who move at walking speed. This itinerary starts in Graça for morning views, drops through Alfama for tiled facades and small museums, and leaves the afternoon open for tram rides, pastry stops, and riverside time. The piece focuses on how to group neighborhoods into manageable loops so visitors spend more time noticing the city and less time commuting across it.",
     "topics": ["tourism", "city-break", "europe-travel"],
     "tags": ["walkable", "budget", "cafes", "itinerary"],
+    "authorId": 1,
+    "authorName": "Elena Rossi",
+    "publisherId": 1,
+    "publisherName": "North Star Dispatch",
     "createdAt": "2026-05-02T08:00:00Z"
   },
   {
@@ -13,6 +17,10 @@
     "content": "Beach towns on the Aegean coast change character once the peak summer rush passes. Ferries are easier to book, family-run guesthouses have more room to negotiate on price, and waterfront restaurants slow down enough to feel local again. The article looks at weather tradeoffs, transport timing, and how travelers can spread spending beyond the busiest weeks.",
     "topics": ["tourism", "beach-travel", "sustainable-travel"],
     "tags": ["off-season", "ferries", "slow-travel", "local-markets"],
+    "authorId": 1,
+    "authorName": "Elena Rossi",
+    "publisherId": 1,
+    "publisherName": "North Star Dispatch",
     "createdAt": "2026-05-07T09:15:00Z"
   },
   {
@@ -21,6 +29,10 @@
     "content": "A short trip to Taipei can be built around night markets, breakfast shops, and late coffee rather than landmarks alone. This guide maps a two-day route that keeps transit simple while giving readers a reason to explore different districts through snacks, noodles, and neighborhood bakeries. It is written for travelers who want a compact itinerary but still care about local rhythm and street-level detail.",
     "topics": ["tourism", "food-travel", "city-break"],
     "tags": ["night-markets", "street-food", "local-eats", "weekend-guide"],
+    "authorId": 2,
+    "authorName": "Daniel Cho",
+    "publisherId": 1,
+    "publisherName": "North Star Dispatch",
     "createdAt": "2026-05-10T11:00:00Z"
   },
   {
@@ -29,6 +41,10 @@
     "content": "This recipe is designed for nights when dinner needs to happen in half an hour without tasting rushed. Toasted orzo cooks in stock with garlic, spinach, and chickpeas before being finished with lemon zest and a spoon of yogurt. The article explains where the texture comes from and how to adjust the liquid if the pasta sits too long before serving.",
     "topics": ["cooking", "weeknight-dinners", "mediterranean"],
     "tags": ["one-pan", "orzo", "lemon", "quick-meals"],
+    "authorId": 3,
+    "authorName": "Mira Tsvetanova",
+    "publisherId": 2,
+    "publisherName": "Signal Weekly",
     "createdAt": "2026-05-12T17:30:00Z"
   },
   {
@@ -37,6 +53,10 @@
     "content": "Summer heat can turn a dependable dough into an over-proofed one if bakers do not adjust timing and hydration. This article walks through shorter bulk fermentation windows, cooler mixing water, and small starter changes that make daily baking less erratic. It is written for home bakers who want consistency more than dramatic open crumb photos.",
     "topics": ["cooking", "baking", "bread"],
     "tags": ["sourdough", "fermentation", "hydration", "summer-baking"],
+    "authorId": 3,
+    "authorName": "Mira Tsvetanova",
+    "publisherId": 2,
+    "publisherName": "Signal Weekly",
     "createdAt": "2026-05-15T06:45:00Z"
   },
   {
@@ -45,6 +65,10 @@
     "content": "Buying vegetables without a plan often ends with soft herbs and forgotten greens by Thursday. This piece proposes a market-to-pot workflow: roast one tray of vegetables, reserve stems and peels for stock, and use blended beans to turn leftovers into a fast lunch soup. The focus is on technique and planning rather than a single fixed recipe.",
     "topics": ["cooking", "seasonal-cooking", "meal-prep"],
     "tags": ["farmers-market", "soup", "leftovers", "kitchen-routine"],
+    "authorId": 4,
+    "authorName": "Samira Haddad",
+    "publisherId": 2,
+    "publisherName": "Signal Weekly",
     "createdAt": "2026-05-18T12:10:00Z"
   },
   {
@@ -53,6 +77,10 @@
     "content": "Tailored vests solve a practical styling problem: they sharpen an outfit without adding the full structure or warmth of a blazer. The article looks at how stylists use them over tees, under light coats, and with wide trousers to create cleaner proportions. It also notes why the shape reads modern when the fit is slightly relaxed instead of rigid.",
     "topics": ["fashion", "spring-style", "designer-trends"],
     "tags": ["tailoring", "layering", "runway", "silhouette"],
+    "authorId": 5,
+    "authorName": "Noor Bakshi",
+    "publisherId": 3,
+    "publisherName": "Cedar Review",
     "createdAt": "2026-05-20T10:20:00Z"
   },
   {
@@ -61,6 +89,10 @@
     "content": "Capsule wardrobe advice often becomes so neutral that every trip looks the same. This article argues for a tighter base of repeatable pieces, then shows how one accent color, one patterned shirt, and a consistent shoe choice can keep the packing list small without flattening personal style. It is aimed at travelers trying to balance efficiency with taste.",
     "topics": ["fashion", "travel-style", "wardrobe"],
     "tags": ["capsule-wardrobe", "linen", "packing", "color-palette"],
+    "authorId": 5,
+    "authorName": "Noor Bakshi",
+    "publisherId": 3,
+    "publisherName": "Cedar Review",
     "createdAt": "2026-05-23T09:50:00Z"
   },
   {
@@ -69,6 +101,10 @@
     "content": "Luxury brands increasingly talk about repair services, resale partnerships, and longer product life because customers now treat durability as part of prestige. This article connects that shift to margin pressure, sustainability claims, and the growing expectation that expensive items should come with aftercare. The piece sits between style reporting and retail industry analysis.",
     "topics": ["fashion", "retail-industry", "sustainability"],
     "tags": ["resale", "repair", "consumer-trends", "luxury"],
+    "authorId": 6,
+    "authorName": "Leonie Weber",
+    "publisherId": 3,
+    "publisherName": "Cedar Review",
     "createdAt": "2026-05-26T14:05:00Z"
   },
   {
@@ -77,6 +113,10 @@
     "content": "Local governments are increasingly treating extreme heat as a planning issue rather than a short-lived weather event. The article examines how municipal budgets are shifting toward shade, cooling centers, school upgrades, and street-level infrastructure that protects vulnerable residents first. It focuses on the policy tradeoffs behind those decisions instead of disaster imagery.",
     "topics": ["current-affairs", "climate-policy", "local-government"],
     "tags": ["heatwave", "public-budget", "infrastructure", "resilience"],
+    "authorId": 7,
+    "authorName": "Ana Petrova",
+    "publisherId": 4,
+    "publisherName": "Public Ledger",
     "createdAt": "2026-05-28T07:25:00Z"
   },
   {
@@ -85,6 +125,10 @@
     "content": "Consumers often expect food prices to fall quickly once transport and energy costs stabilize, but retail pricing rarely moves in a straight line. This article breaks down delayed supplier contracts, packaging costs, labor pressure, and margin rebuilding to explain why grocery bills can remain high long after headline inputs soften. The emphasis is on household impact and market structure.",
     "topics": ["current-affairs", "economy", "consumer-policy"],
     "tags": ["inflation", "supply-chain", "retail", "households"],
+    "authorId": 8,
+    "authorName": "Tomas Iliev",
+    "publisherId": 4,
+    "publisherName": "Public Ledger",
     "createdAt": "2026-05-30T16:40:00Z"
   }
 ]

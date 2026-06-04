@@ -67,6 +67,10 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
                 article.content().trim(),
                 normalize(article.topics()),
                 normalize(article.tags()),
+                article.authorId(),
+                trimToNull(article.authorName()),
+                article.publisherId(),
+                trimToNull(article.publisherName()),
                 article.createdAt()
         );
     }
@@ -80,12 +84,25 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
                         .toList();
     }
 
+    private String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private record DatasetArticle(
             String id,
             String title,
             String content,
             List<String> topics,
             List<String> tags,
+            Long authorId,
+            String authorName,
+            Long publisherId,
+            String publisherName,
             Instant createdAt
     ) {
     }

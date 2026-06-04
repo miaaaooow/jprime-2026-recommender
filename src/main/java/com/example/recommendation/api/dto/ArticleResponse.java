@@ -8,6 +8,10 @@ public record ArticleResponse(
         String id,
         String title,
         String content,
+        Long authorId,
+        String authorName,
+        Long publisherId,
+        String publisherName,
         List<String> topics,
         List<String> tags,
         Instant createdAt
@@ -17,6 +21,10 @@ public record ArticleResponse(
                 article.getId(),
                 article.getTitle(),
                 article.getContent(),
+                article.getAuthorId(),
+                article.getAuthorName(),
+                article.getPublisherId(),
+                article.getPublisherName(),
                 List.copyOf(article.getTopics()),
                 List.copyOf(article.getTags()),
                 article.getCreatedAt()

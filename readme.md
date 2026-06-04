@@ -4,7 +4,7 @@ Botev is a recommendation and ranking service for a higher-quality news aggregat
 
 A small Spring Boot service that keeps:
 
-- users and likes in a SQL database
+- users, publishers, authors, and interactions in a SQL database
 - articles in Elasticsearch
 - user recommendation profiles in Elasticsearch
 
@@ -18,11 +18,20 @@ The goal is to reward strong journalism with fairer access to advertising and re
 ## Model
 
 - `UserEntity`: SQL record for a user
-- `UserArticleLikeEntity`: SQL record for a user liking an article
-- `ArticleDocument`: Elasticsearch document with `title`, `content`, `topics`, and `tags`
+- `UserArticleInteractionEntity`: SQL record for article reads, likes, and shares
+- `UserArticleLikeEntity`: legacy SQL record for likes kept for backward compatibility
+- `PublisherEntity`: SQL record for a publisher
+- `AuthorEntity`: SQL record for an author, including an internal rating and publisher membership
+- `ArticleDocument`: Elasticsearch document with `title`, `content`, `topics`, `tags`, `author`, and `publisher`
 - `UserProfileDocument`: Elasticsearch document with topic/tag weights derived from article interactions
 
-Topics and tags are accepted directly today. The `ArticleFeatureExtractor` abstraction is the seam for replacing manual metadata with NLP or LLM-based extraction from article text later.
+Topics and tags are still accepted directly, but new articles also go through an internal automatic tagging flow.
+The `ArticleFeatureExtractor` abstraction is the seam for replacing the current heuristic tagger with NLP or LLM-based extraction later.
+
+## Internal Tagging
+
+`POST /api/internal/article-tagging` previews automatic tags for a draft article.
+The current implementation uses keyword heuristics over the title and content, merges the detected labels with any manually supplied labels, and falls back to generic labels when no stronger match is found.
 
 ## Similarity Models
 
@@ -62,6 +71,7 @@ Config:
 
 A reusable article dataset lives at `src/main/resources/testdata/articles.json`.
 It includes tourism, cooking, fashion, and current affairs samples, with a few cross-topic articles so recommendation overlap is easier to test.
+Sample articles now also include author and publisher metadata.
 
 Load it on startup only when you need it:
 
@@ -81,6 +91,29 @@ curl -X POST http://localhost:8080/api/users \
   -d '{"username":"alice","email":"alice@example.com"}'
 ```
 
+Create publishers and authors:
+
+```bash
+curl -X POST http://localhost:8080/api/publishers \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Botev Newsroom"}'
+
+curl -X POST http://localhost:8080/api/authors \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Marta Ivanova","publisherId":1,"internalRating":88.0}'
+```
+
+Preview automatic tagging for a draft:
+
+```bash
+curl -X POST http://localhost:8080/api/internal/article-tagging \
+  -H 'Content-Type: application/json' \
+  -d '{
+    "title":"Government reviews AI platform rules",
+    "content":"The minister outlined new policy for artificial intelligence systems."
+  }'
+```
+
 Create articles:
 
 ```bash
@@ -89,6 +122,8 @@ curl -X POST http://localhost:8080/api/articles \
   -d '{
     "title":"Modern Search Ranking",
     "content":"How retrieval and ranking fit together.",
+    "authorId":1,
+    "publisherId":1,
     "topics":["search","ai"],
     "tags":["ranking","ml"]
   }'
@@ -121,3 +156,4 @@ curl 'http://localhost:8080/api/users/1/recommendations?limit=5'
 - This implementation scans all articles when ranking recommendations. That is fine for a small app and easy to reason about.
 - For larger scale, push candidate generation into Elasticsearch and keep the Java service for profile updates, filtering, and reranking.
 - Because articles are stored in Elasticsearch, there is no SQL foreign key from interactions to articles. The service validates article existence before saving an interaction.
+- Article creation validates that the selected author belongs to the selected publisher.

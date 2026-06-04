@@ -1,14 +1,11 @@
 package com.example.recommendation.api.dto;
 
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotNull;
 import java.util.List;
 
-public record CreateArticleRequest(
+public record ArticleTaggingRequest(
         @NotBlank(message = "must not be blank") String title,
         @NotBlank(message = "must not be blank") String content,
-        @NotNull(message = "must not be null") Long authorId,
-        @NotNull(message = "must not be null") Long publisherId,
         List<String> topics,
         List<String> tags
 ) {

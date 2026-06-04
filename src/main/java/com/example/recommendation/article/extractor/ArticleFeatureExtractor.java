@@ -4,7 +4,7 @@ import java.util.List;
 
 public interface ArticleFeatureExtractor {
 
-    ArticleFeatures extract(String content, List<String> topics, List<String> tags);
+    ArticleFeatures extract(String title, String content, List<String> topics, List<String> tags);
 
     record ArticleFeatures(List<String> topics, List<String> tags) {
     }
