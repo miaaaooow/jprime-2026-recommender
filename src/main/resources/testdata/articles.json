@@ -17,6 +17,7 @@
     "tags": ["off-season", "ferries", "slow-travel", "local-markets"],
     "authorName": "Elena Rossi",
     "publisherName": "North Star Dispatch",
+    "accessLevel": "SUBSCRIBERS_ONLY",
     "createdAt": "2026-05-07T09:15:00Z"
   },
   {
@@ -47,6 +48,7 @@
     "tags": ["sourdough", "fermentation", "hydration", "summer-baking"],
     "authorName": "Mira Tsvetanova",
     "publisherName": "Signal Weekly",
+    "accessLevel": "SUBSCRIBERS_ONLY",
     "createdAt": "2026-05-15T06:45:00Z"
   },
   {
@@ -87,6 +89,7 @@
     "tags": ["resale", "repair", "consumer-trends", "luxury"],
     "authorName": "Leonie Weber",
     "publisherName": "Cedar Review",
+    "accessLevel": "SUBSCRIBERS_ONLY",
     "createdAt": "2026-05-26T14:05:00Z"
   },
   {
@@ -97,6 +100,7 @@
     "tags": ["heatwave", "public-budget", "infrastructure", "resilience"],
     "authorName": "Ana Petrova",
     "publisherName": "Public Ledger",
+    "accessLevel": "SUBSCRIBERS_ONLY",
     "createdAt": "2026-05-28T07:25:00Z"
   },
   {

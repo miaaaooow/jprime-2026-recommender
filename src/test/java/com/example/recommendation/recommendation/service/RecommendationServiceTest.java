@@ -11,6 +11,7 @@ import com.example.recommendation.profile.model.UserProfileDocument;
 import com.example.recommendation.profile.service.UserProfileService;
 import com.example.recommendation.recommendation.similarity.FixedWeightUserArticleSimilarityModel;
 import com.example.recommendation.recommendation.similarity.UserArticleSimilarityModelRegistry;
+import com.example.recommendation.subscription.service.UserSubscriptionService;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,9 @@ class RecommendationServiceTest {
     @Mock
     private UserProfileService userProfileService;
 
+    @Mock
+    private UserSubscriptionService userSubscriptionService;
+
     private RecommendationService recommendationService;
 
     @BeforeEach
@@ -42,7 +46,8 @@ class RecommendationServiceTest {
                 articleRepository,
                 userProfileService,
                 similarityModelRegistry,
-                recommendationProperties
+                recommendationProperties,
+                userSubscriptionService
         );
     }
 
@@ -58,6 +63,7 @@ class RecommendationServiceTest {
         profile.setTagWeights(Map.of("ml", 0.6, "ranking", 0.4));
 
         when(userProfileService.getProfile(3L)).thenReturn(profile);
+        when(userSubscriptionService.subscribedPublisherIdsForUser(3L)).thenReturn(java.util.Set.of());
         when(articleRepository.findAll()).thenReturn(List.of(
                 new ArticleDocument("read-1", "Seen article", "...", List.of("ai"), List.of("ml"), Instant.now()),
                 new ArticleDocument("liked-1", "Seen article", "...", List.of("ai"), List.of("ml"), Instant.now()),
@@ -89,6 +95,7 @@ class RecommendationServiceTest {
         profile.setTagWeights(Map.of("ml", 1.0));
 
         when(userProfileService.getProfile(3L)).thenReturn(profile);
+        when(userSubscriptionService.subscribedPublisherIdsForUser(3L)).thenReturn(java.util.Set.of());
         when(articleRepository.findAll()).thenReturn(List.of(
                 new ArticleDocument("liked-1", "Seen article", "...", List.of("ai"), List.of("ml"), Instant.now()),
                 new ArticleDocument("candidate-1", "AI ranking systems", "...", List.of("ai"), List.of("ml"), Instant.now()),
@@ -99,5 +106,44 @@ class RecommendationServiceTest {
 
         assertThat(recommendations).hasSize(1);
         assertThat(recommendations.get(0).articleId()).isEqualTo("candidate-1");
+    }
+
+    @Test
+    void recommendForUserSkipsSubscriptionOnlyArticlesWhenUserIsNotSubscribed() {
+        UserProfileDocument profile = new UserProfileDocument();
+        profile.setUserId(5L);
+        profile.setSimilarityModelKey("fixed-weight");
+        profile.setTopicWeights(Map.of("fashion", 1.0));
+        profile.setTagWeights(Map.of("luxury", 1.0));
+
+        ArticleDocument publicArticle = new ArticleDocument(
+                "public-1",
+                "Public fashion brief",
+                "...",
+                List.of("fashion"),
+                List.of("luxury"),
+                Instant.now()
+        );
+        ArticleDocument premiumArticle = new ArticleDocument(
+                "premium-1",
+                "Premium fashion brief",
+                "...",
+                List.of("fashion"),
+                List.of("luxury"),
+                11L,
+                "Leonie Weber",
+                7L,
+                "Cedar Review",
+                com.example.recommendation.article.model.ArticleAccessLevel.SUBSCRIBERS_ONLY,
+                Instant.now()
+        );
+
+        when(userProfileService.getProfile(5L)).thenReturn(profile);
+        when(articleRepository.findAll()).thenReturn(List.of(publicArticle, premiumArticle));
+        when(userSubscriptionService.subscribedPublisherIdsForUser(5L)).thenReturn(java.util.Set.of());
+
+        List<RecommendationResponse> recommendations = recommendationService.recommendForUser(5L, 5);
+
+        assertThat(recommendations).extracting(RecommendationResponse::articleId).containsExactly("public-1");
     }
 }

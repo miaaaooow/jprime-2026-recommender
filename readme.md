@@ -9,7 +9,7 @@ A small Spring Boot service that keeps:
 - articles in Elasticsearch
 - user recommendation profiles in Elasticsearch
 
-The recommendation logic (so far): user interactions build a topic/tag profile, and recommendations rank unseen articles by comparing their labels against that profile with a selectable similarity model.
+The recommendation logic (so far): user interactions build a topic/tag profile, and recommendations rank unseen, accessible articles by comparing their labels against that profile with a selectable similarity model.
 
 ## Motivation
 
@@ -21,9 +21,10 @@ The goal is to reward strong journalism with fairer access to advertising and re
 - `UserEntity`: SQL record for a user
 - `UserArticleInteractionEntity`: SQL record for article reads, likes, and shares
 - `UserArticleLikeEntity`: legacy SQL record for likes kept for backward compatibility
+- `UserPublisherSubscriptionEntity`: SQL record for user-to-publisher subscriptions
 - `PublisherEntity`: SQL record for a publisher
 - `AuthorEntity`: SQL record for an author, including an internal rating and publisher membership
-- `ArticleDocument`: Elasticsearch document with `title`, `content`, `topics`, `tags`, `author`, and `publisher`
+- `ArticleDocument`: Elasticsearch document with `title`, `content`, `topics`, `tags`, `author`, `publisher`, and `accessLevel`
 - `UserProfileDocument`: Elasticsearch document with topic/tag weights derived from article interactions
 
 Diagram source: [docs/model-diagram.md](/Users/maria.mateva/Projects/jprime-2026-recommender/docs/model-diagram.md)
@@ -34,12 +35,13 @@ flowchart LR
         U["UserEntity"]
         UI["UserArticleInteractionEntity\nREAD | LIKE | SHARE"]
         UL["UserArticleLikeEntity\nlegacy likes"]
+        US["UserPublisherSubscriptionEntity"]
         P["PublisherEntity"]
         A["AuthorEntity\ninternalRating"]
     end
 
     subgraph ES["Elasticsearch"]
-        AD["ArticleDocument\ntitle\ncontent\ntopics\ntags\nauthor\npublisher"]
+        AD["ArticleDocument\ntitle\ncontent\ntopics\ntags\nauthor\npublisher\naccessLevel"]
         UP["UserProfileDocument\ntopicWeights\ntagWeights\nread/like/share ids"]
     end
 
@@ -53,13 +55,17 @@ flowchart LR
 
     U -->|has many| UI
     U -->|has many| UL
+    U -->|has many| US
     U -->|has one| UP
 
     UI -->|references articleId| AD
     UL -.->|legacy articleId reference| AD
+    US -->|subscribes to| P
 
     UI -->|used to rebuild| UP
     UL -.->|backward-compatible input| UP
+
+    US -.->|unlocks subscribers-only articles| AD
 
     FE -->|extracts topics/tags for new articles| AD
 ```
@@ -117,6 +123,16 @@ The current implementation prefers:
 
 Prioritizing globally new tags can be added later without changing the external API.
 
+## Subscriptions
+
+Users can subscribe to multiple publishers.
+Each article is either `PUBLIC` or `SUBSCRIBERS_ONLY`.
+
+Subscriber-only articles:
+
+- remain in the internal catalog
+- are excluded from recommendations unless the user is subscribed to that article's publisher
+
 ## Run
 
 Prerequisites:
@@ -153,10 +169,12 @@ It includes:
 - `articles.json`
 - `users.json`
 - `interactions.json`
+- `subscriptions.json`
 
-The startup loader seeds publishers, authors, users, and user interactions into SQL, then writes the article dataset to Elasticsearch using the real generated author and publisher ids.
+The startup loader seeds publishers, authors, users, user interactions, and user subscriptions into SQL, then writes the article dataset to Elasticsearch using the real generated author and publisher ids.
 The sample content covers tourism, cooking, fashion, and current affairs, with a few cross-topic articles so recommendation overlap is easier to test.
-It also rebuilds the seeded user profiles on startup, so the dashboard can show user tags and recommendation previews immediately.
+It also rebuilds the seeded user profiles on startup, so the dashboard can show user tags, subscriptions, and recommendation previews immediately.
+Some seeded articles are `SUBSCRIBERS_ONLY`, so the subscription filter is visible immediately.
 
 The demo dataset is enabled by default. If you want to run without it:
 
@@ -165,7 +183,7 @@ APP_TEST_DATA_ARTICLES_ENABLED=false mvn spring-boot:run
 ```
 
 The loader upserts the same article ids on each run, so local testing stays deterministic.
-Publisher and author records are also reused by name, and author ratings are refreshed from the dataset if they change.
+Publisher, author, and user records are reused by name, and author ratings are refreshed from the dataset if they change.
 
 ## API
 
@@ -210,9 +228,28 @@ curl -X POST http://localhost:8080/api/articles \
     "content":"How retrieval and ranking fit together.",
     "authorId":1,
     "publisherId":1,
+    "accessLevel":"PUBLIC",
     "topics":["search","ai"],
     "tags":["ranking","ml"]
   }'
+```
+
+Manage subscriptions:
+
+```bash
+curl -X POST http://localhost:8080/api/users/1/subscriptions/1
+
+curl http://localhost:8080/api/users/1/subscriptions
+
+curl -X DELETE http://localhost:8080/api/users/1/subscriptions/1
+```
+
+List articles visible to the general public or to a specific user:
+
+```bash
+curl http://localhost:8080/api/articles
+
+curl 'http://localhost:8080/api/articles?userId=1'
 ```
 
 Record interactions and update the profile:
@@ -243,3 +280,5 @@ curl 'http://localhost:8080/api/users/1/recommendations?limit=5'
 - For larger scale, push candidate generation into Elasticsearch and keep the Java service for profile updates, filtering, and reranking.
 - Because articles are stored in Elasticsearch, there is no SQL foreign key from interactions to articles. The service validates article existence before saving an interaction.
 - Article creation validates that the selected author belongs to the selected publisher.
+- `GET /api/articles` returns only public articles by default. Pass `userId` to include that user's subscriber-only articles.
+- Recommendations exclude subscriber-only articles unless the user has a subscription to that publisher.

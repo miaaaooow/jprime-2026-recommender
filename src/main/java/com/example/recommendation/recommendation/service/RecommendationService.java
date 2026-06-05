@@ -9,6 +9,7 @@ import com.example.recommendation.profile.service.UserProfileService;
 import com.example.recommendation.recommendation.similarity.ArticleSimilarity;
 import com.example.recommendation.recommendation.similarity.UserArticleSimilarityModel;
 import com.example.recommendation.recommendation.similarity.UserArticleSimilarityModelRegistry;
+import com.example.recommendation.subscription.service.UserSubscriptionService;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
@@ -26,23 +27,27 @@ public class RecommendationService {
     private final UserProfileService userProfileService;
     private final UserArticleSimilarityModelRegistry similarityModelRegistry;
     private final RecommendationProperties recommendationProperties;
+    private final UserSubscriptionService userSubscriptionService;
 
     public RecommendationService(
             ArticleRepository articleRepository,
             UserProfileService userProfileService,
             UserArticleSimilarityModelRegistry similarityModelRegistry,
-            RecommendationProperties recommendationProperties
+            RecommendationProperties recommendationProperties,
+            UserSubscriptionService userSubscriptionService
     ) {
         this.articleRepository = articleRepository;
         this.userProfileService = userProfileService;
         this.similarityModelRegistry = similarityModelRegistry;
         this.recommendationProperties = recommendationProperties;
+        this.userSubscriptionService = userSubscriptionService;
     }
 
     public List<RecommendationResponse> recommendForUser(Long userId, int limit) {
         UserProfileDocument profile = userProfileService.getProfile(userId);
         UserArticleSimilarityModel similarityModel = similarityModelRegistry.getActiveModel();
         Set<String> interactedArticleIds = Set.copyOf(loadInteractedArticleIds(profile));
+        Set<Long> subscribedPublisherIds = userSubscriptionService.subscribedPublisherIdsForUser(userId);
 
         if (profile.getTopicWeights().isEmpty() && profile.getTagWeights().isEmpty()) {
             return List.of();
@@ -50,6 +55,7 @@ public class RecommendationService {
 
         List<ScoredArticle> scoredArticles = StreamSupport.stream(articleRepository.findAll().spliterator(), false)
                 .filter(article -> !interactedArticleIds.contains(article.getId()))
+                .filter(article -> canAccessArticle(article, subscribedPublisherIds))
                 .map(article -> scoreArticle(similarityModel, profile, article))
                 .toList();
 
@@ -82,6 +88,15 @@ public class RecommendationService {
         interactedArticleIds.addAll(profile.getLikedArticleIds());
         interactedArticleIds.addAll(profile.getSharedArticleIds());
         return interactedArticleIds;
+    }
+
+    private boolean canAccessArticle(ArticleDocument article, Set<Long> subscribedPublisherIds) {
+        if (article.getAccessLevel() != com.example.recommendation.article.model.ArticleAccessLevel.SUBSCRIBERS_ONLY) {
+            return true;
+        }
+
+        Long publisherId = article.getPublisherId();
+        return publisherId != null && subscribedPublisherIds.contains(publisherId);
     }
 
     private List<ScoredArticle> mergeRecommendations(
@@ -164,6 +179,7 @@ public class RecommendationService {
         return new RecommendationResponse(
                 scoredArticle.article().getId(),
                 scoredArticle.article().getTitle(),
+                scoredArticle.article().getAccessLevel(),
                 scoredArticle.similarity().score(),
                 scoredArticle.similarity().matchedTopics(),
                 scoredArticle.similarity().matchedTags(),

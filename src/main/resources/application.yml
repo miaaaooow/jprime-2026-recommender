@@ -55,3 +55,4 @@ app:
       authors-resource: classpath:testdata/authors.json
       users-resource: classpath:testdata/users.json
       interactions-resource: classpath:testdata/interactions.json
+      subscriptions-resource: classpath:testdata/subscriptions.json

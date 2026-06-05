@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -31,12 +32,15 @@ public class ArticleController {
     }
 
     @GetMapping("/{articleId}")
-    public ArticleResponse getArticle(@PathVariable String articleId) {
-        return ArticleResponse.from(articleService.getArticle(articleId));
+    public ArticleResponse getArticle(
+            @PathVariable String articleId,
+            @RequestParam(required = false) Long userId
+    ) {
+        return ArticleResponse.from(articleService.getArticle(articleId, userId));
     }
 
     @GetMapping
-    public List<ArticleResponse> getArticles() {
-        return articleService.getAllArticles().stream().map(ArticleResponse::from).toList();
+    public List<ArticleResponse> getArticles(@RequestParam(required = false) Long userId) {
+        return articleService.getAllArticles(userId).stream().map(ArticleResponse::from).toList();
     }
 }

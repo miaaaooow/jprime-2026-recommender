@@ -2,6 +2,7 @@ package com.example.recommendation.common.api;
 
 import com.example.recommendation.common.exception.ResourceNotFoundException;
 import com.example.recommendation.common.exception.BadRequestException;
+import com.example.recommendation.common.exception.ForbiddenException;
 import java.time.Instant;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -24,6 +25,11 @@ public class ApiExceptionHandler {
     @ExceptionHandler(BadRequestException.class)
     public ResponseEntity<Map<String, Object>> handleBadRequest(BadRequestException exception) {
         return buildResponse(HttpStatus.BAD_REQUEST, exception.getMessage());
+    }
+
+    @ExceptionHandler(ForbiddenException.class)
+    public ResponseEntity<Map<String, Object>> handleForbidden(ForbiddenException exception) {
+        return buildResponse(HttpStatus.FORBIDDEN, exception.getMessage());
     }
 
     @ExceptionHandler(DataIntegrityViolationException.class)

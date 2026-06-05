@@ -1,9 +1,13 @@
 const state = {
     users: [],
     userProfiles: new Map(),
+    userSubscriptions: new Map(),
+    publishers: [],
     articles: [],
     selectedUserId: null,
-    recommendationLimit: 6
+    recommendationLimit: 6,
+    pendingPublisherId: null,
+    subscriptionErrorMessage: null
 };
 
 const elements = {
@@ -16,6 +20,9 @@ const elements = {
     tagWeights: document.getElementById("tagWeights"),
     topicCount: document.getElementById("topicCount"),
     tagCount: document.getElementById("tagCount"),
+    publisherCount: document.getElementById("publisherCount"),
+    subscriptionStatus: document.getElementById("subscriptionStatus"),
+    publishers: document.getElementById("publishers"),
     userCards: document.getElementById("userCards"),
     profileCardCount: document.getElementById("profileCardCount"),
     articles: document.getElementById("articles"),
@@ -42,21 +49,21 @@ async function initializeDashboard() {
     renderLoadingState();
 
     try {
-        const [users, articles] = await Promise.all([
+        const [users, publishers] = await Promise.all([
             fetchJson("/api/users"),
-            fetchJson("/api/articles")
+            fetchJson("/api/publishers")
         ]);
 
         state.users = users;
-        state.articles = [...articles].sort(sortByCreatedAtDescending);
+        state.publishers = [...publishers].sort(sortByName);
 
         elements.userCount.textContent = String(state.users.length);
-        elements.articleCount.textContent = String(state.articles.length);
-
-        renderArticles();
+        elements.publisherCount.textContent = String(state.publishers.length);
 
         if (state.users.length === 0) {
+            await loadArticles();
             renderEmptyUsers();
+            renderPublisherManagement(null, []);
             return;
         }
 
@@ -84,6 +91,7 @@ async function loadProfiles(users) {
 
 async function selectUser(userId) {
     state.selectedUserId = userId;
+    state.subscriptionErrorMessage = null;
     elements.userSelect.value = String(userId);
 
     const user = state.users.find((candidate) => candidate.id === userId);
@@ -100,8 +108,21 @@ async function selectUser(userId) {
         }
     }
 
+    let subscriptions = state.userSubscriptions.get(userId);
+    if (!subscriptions) {
+        try {
+            subscriptions = await fetchJson(`/api/users/${userId}/subscriptions`);
+            state.userSubscriptions.set(userId, subscriptions);
+        } catch (error) {
+            subscriptions = [];
+            state.userSubscriptions.set(userId, subscriptions);
+        }
+    }
+
     renderUserCards();
-    renderProfile(user, profile);
+    renderProfile(user, profile, subscriptions);
+    renderPublisherManagement(user, subscriptions);
+    await loadArticles(userId);
     await renderRecommendations(userId);
 }
 
@@ -139,6 +160,8 @@ function renderLoadingState() {
     elements.profileSummary.textContent = "Loading users and profile data...";
     elements.topicWeights.textContent = "Loading topics...";
     elements.tagWeights.textContent = "Loading tags...";
+    elements.subscriptionStatus.textContent = "Loading publishers...";
+    elements.publishers.textContent = "Loading publishers...";
     elements.userCards.textContent = "Loading users...";
     elements.articles.textContent = "Loading articles...";
     elements.recommendations.textContent = "Select a user to preview recommendations.";
@@ -154,14 +177,24 @@ function renderEmptyUsers() {
     elements.userCards.textContent = "No users available.";
     elements.recommendationMeta.textContent = "No user selected.";
     elements.recommendations.textContent = "No recommendations available.";
+    elements.subscriptionStatus.textContent = "Create or seed a user to manage publisher subscriptions.";
     elements.profileCardCount.textContent = "0";
     elements.topicCount.textContent = "0";
     elements.tagCount.textContent = "0";
 }
 
+async function loadArticles(userId = null) {
+    const query = userId == null ? "" : `?userId=${userId}`;
+    state.articles = [...await fetchJson(`/api/articles${query}`)].sort(sortByCreatedAtDescending);
+    elements.articleCount.textContent = String(state.articles.length);
+    renderArticles();
+}
+
 function renderGlobalError(error) {
     const message = extractErrorMessage(error);
     elements.profileSummary.textContent = message;
+    elements.subscriptionStatus.textContent = message;
+    elements.publishers.textContent = message;
     elements.userCards.textContent = message;
     elements.articles.textContent = message;
     elements.recommendations.textContent = message;
@@ -181,9 +214,12 @@ function renderUserSelector() {
             .join("");
 }
 
-function renderProfile(user, profile) {
+function renderProfile(user, profile, subscriptions) {
     elements.topicCount.textContent = String(Object.keys(profile.topicWeights ?? {}).length);
     elements.tagCount.textContent = String(Object.keys(profile.tagWeights ?? {}).length);
+    const subscriptionChips = subscriptions && subscriptions.length > 0
+            ? subscriptions.map((subscription) => chip(subscription.publisherName, "is-gold")).join("")
+            : chip("no subscriptions");
 
     const summaryBits = [
         `<strong>${escapeHtml(user.username)}</strong>`,
@@ -201,11 +237,76 @@ function renderProfile(user, profile) {
                 ${chip(`shares ${profile.sharedArticleCount}`, "is-accent")}
                 ${chip(`updated ${formatTimestamp(profile.updatedAt)}`, "is-gold")}
             </div>
+            <div class="stack">
+                <div class="muted">Subscribed publishers</div>
+                <div class="chip-row">${subscriptionChips}</div>
+            </div>
         </div>
     `;
 
     renderWeights(elements.topicWeights, profile.topicWeights, "No weighted topics yet.");
     renderWeights(elements.tagWeights, profile.tagWeights, "No weighted tags yet.");
+}
+
+function renderPublisherManagement(user, subscriptions) {
+    elements.publisherCount.textContent = String(state.publishers.length);
+
+    if (state.publishers.length === 0) {
+        elements.subscriptionStatus.className = "profile-summary empty-state";
+        elements.subscriptionStatus.textContent = "No publishers available.";
+        elements.publishers.className = "publisher-grid empty-state";
+        elements.publishers.textContent = "No publishers available.";
+        return;
+    }
+
+    const subscribedPublisherIds = new Set((subscriptions ?? []).map((subscription) => subscription.publisherId));
+
+    if (!user) {
+        elements.subscriptionStatus.className = "profile-summary empty-state";
+        elements.subscriptionStatus.textContent = state.users.length === 0
+                ? "Create or seed a user to manage publisher subscriptions."
+                : "Select a user to manage publisher subscriptions.";
+    } else {
+        const errorMessage = state.subscriptionErrorMessage
+                ? `<div class="status-error">${escapeHtml(state.subscriptionErrorMessage)}</div>`
+                : "";
+
+        elements.subscriptionStatus.className = "profile-summary";
+        elements.subscriptionStatus.innerHTML = `
+            <div class="stack">
+                <div>
+                    Managing subscriptions for <strong>${escapeHtml(user.username)}</strong>.
+                </div>
+                <div class="inline-stat-list">
+                    ${chip(`${subscribedPublisherIds.size} active`, "is-gold")}
+                    ${chip(`${state.publishers.length} publishers`)}
+                </div>
+                ${errorMessage}
+            </div>
+        `;
+    }
+
+    elements.publishers.className = "publisher-grid";
+    elements.publishers.innerHTML = state.publishers
+            .map((publisher) => publisherCard(publisher, {
+                canManage: user != null,
+                isSubscribed: subscribedPublisherIds.has(publisher.id),
+                isPending: state.pendingPublisherId === publisher.id
+            }))
+            .join("");
+
+    elements.publishers.querySelectorAll("[data-subscription-action]").forEach((button) => {
+        button.addEventListener("click", async () => {
+            const publisherId = Number.parseInt(button.dataset.publisherId, 10);
+            const isSubscribed = button.dataset.subscribed === "true";
+
+            if (Number.isNaN(publisherId)) {
+                return;
+            }
+
+            await updateSubscription(publisherId, isSubscribed);
+        });
+    });
 }
 
 function renderWeights(target, weights, emptyMessage) {
@@ -310,6 +411,46 @@ function userCard(user) {
     `;
 }
 
+async function updateSubscription(publisherId, isSubscribed) {
+    const userId = state.selectedUserId;
+    if (userId == null || state.pendingPublisherId != null) {
+        return;
+    }
+
+    const user = state.users.find((candidate) => candidate.id === userId);
+    if (!user) {
+        return;
+    }
+
+    state.pendingPublisherId = publisherId;
+    state.subscriptionErrorMessage = null;
+    renderPublisherManagement(user, state.userSubscriptions.get(userId) ?? []);
+
+    try {
+        const url = `/api/users/${userId}/subscriptions/${publisherId}`;
+
+        if (isSubscribed) {
+            await sendRequest(url, {method: "DELETE"});
+        } else {
+            await fetchJson(url, {method: "POST"});
+        }
+
+        const subscriptions = await fetchJson(`/api/users/${userId}/subscriptions`);
+        state.userSubscriptions.set(userId, subscriptions);
+
+        renderProfile(user, state.userProfiles.get(userId), subscriptions);
+        await Promise.all([
+            loadArticles(userId),
+            renderRecommendations(userId)
+        ]);
+    } catch (error) {
+        state.subscriptionErrorMessage = extractErrorMessage(error);
+    } finally {
+        state.pendingPublisherId = null;
+        renderPublisherManagement(user, state.userSubscriptions.get(userId) ?? []);
+    }
+}
+
 function recommendationCard(recommendation) {
     const article = state.articles.find((candidate) => candidate.id === recommendation.articleId);
     const matchedTopics = recommendation.matchedTopics.length > 0
@@ -326,6 +467,7 @@ function recommendationCard(recommendation) {
                 <span class="score-badge">${recommendation.score.toFixed(3)}</span>
             </div>
             <div class="card-meta">
+                <span>${visibilityLabel(recommendation.accessLevel)}</span>
                 <span>${escapeHtml(article?.publisherName ?? "Unknown publisher")}</span>
                 <span>${escapeHtml(article?.authorName ?? "Unknown author")}</span>
             </div>
@@ -347,6 +489,7 @@ function articleCard(article) {
         <article class="article-card">
             <h3>${escapeHtml(article.title)}</h3>
             <div class="card-meta">
+                <span>${visibilityLabel(article.accessLevel)}</span>
                 <span>${escapeHtml(article.publisherName ?? "Unknown publisher")}</span>
                 <span>${escapeHtml(article.authorName ?? "Unknown author")}</span>
                 <span>${formatTimestamp(article.createdAt)}</span>
@@ -359,6 +502,57 @@ function articleCard(article) {
             <div class="stack">
                 <div class="muted">Tags</div>
                 <div class="chip-row">${renderChipRow(article.tags, "", "No tags")}</div>
+            </div>
+        </article>
+    `;
+}
+
+function publisherCard(publisher, options) {
+    const articles = publisher.articles ?? [];
+    const authors = publisher.authors ?? [];
+    const publicArticleCount = articles.filter((article) => article.accessLevel !== "SUBSCRIBERS_ONLY").length;
+    const subscriberOnlyArticleCount = articles.length - publicArticleCount;
+    const authorChips = authors.length > 0
+            ? authors
+                    .slice(0, 4)
+                    .map((author) => chip(`${author.name} ${formatRating(author.internalRating)}`, "is-accent"))
+                    .join("")
+            : chip("No authors");
+    const buttonLabel = options.canManage
+            ? (options.isPending
+                ? (options.isSubscribed ? "Unsubscribing..." : "Subscribing...")
+                : (options.isSubscribed ? "Unsubscribe" : "Subscribe"))
+            : "Select a user";
+    const buttonClasses = options.isSubscribed ? "action-button is-secondary" : "action-button";
+
+    return `
+        <article class="publisher-card${options.isSubscribed ? " is-subscribed" : ""}">
+            <div class="publisher-card-header">
+                <div>
+                    <h3>${escapeHtml(publisher.name)}</h3>
+                    <div class="muted">${articles.length} articles · ${authors.length} authors</div>
+                </div>
+                ${options.isSubscribed ? chip("Subscribed", "is-gold") : chip("Not subscribed")}
+            </div>
+            <div class="inline-stat-list">
+                ${chip(`${publicArticleCount} public`, "is-accent")}
+                ${chip(`${subscriberOnlyArticleCount} subscribers only`, "is-gold")}
+            </div>
+            <div class="stack">
+                <div class="muted">Authors</div>
+                <div class="chip-row">${authorChips}</div>
+            </div>
+            <div class="publisher-actions">
+                <button
+                    class="${buttonClasses}"
+                    type="button"
+                    data-subscription-action="toggle"
+                    data-publisher-id="${publisher.id}"
+                    data-subscribed="${options.isSubscribed}"
+                    ${(!options.canManage || state.pendingPublisherId != null) ? "disabled" : ""}
+                >
+                    ${buttonLabel}
+                </button>
             </div>
         </article>
     `;
@@ -395,6 +589,10 @@ function formatWeight(value) {
     return Number(value).toFixed(3);
 }
 
+function formatRating(value) {
+    return Number(value).toFixed(1);
+}
+
 function formatTimestamp(value) {
     if (!value) {
         return "unknown";
@@ -408,6 +606,10 @@ function formatTimestamp(value) {
         hour: "2-digit",
         minute: "2-digit"
     });
+}
+
+function visibilityLabel(accessLevel) {
+    return accessLevel === "SUBSCRIBERS_ONLY" ? "subscribers only" : "public";
 }
 
 function snippet(text, maxLength) {
@@ -425,11 +627,25 @@ function extractErrorMessage(error) {
     return "The dashboard request failed.";
 }
 
-async function fetchJson(url) {
+async function fetchJson(url, options = {}) {
+    const response = await sendRequest(url, options);
+
+    if (response.status === 204) {
+        return null;
+    }
+
+    return response.json();
+}
+
+async function sendRequest(url, options = {}) {
+    const headers = new Headers(options.headers ?? {});
+    if (!headers.has("Accept")) {
+        headers.set("Accept", "application/json");
+    }
+
     const response = await fetch(url, {
-        headers: {
-            Accept: "application/json"
-        }
+        ...options,
+        headers
     });
 
     if (!response.ok) {
@@ -447,13 +663,17 @@ async function fetchJson(url) {
         throw new Error(message);
     }
 
-    return response.json();
+    return response;
 }
 
 function sortByCreatedAtDescending(left, right) {
     const leftTime = left.createdAt ? Date.parse(left.createdAt) : 0;
     const rightTime = right.createdAt ? Date.parse(right.createdAt) : 0;
     return rightTime - leftTime;
+}
+
+function sortByName(left, right) {
+    return left.name.localeCompare(right.name);
 }
 
 function escapeHtml(value) {

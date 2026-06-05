@@ -11,10 +11,11 @@
     <header class="hero">
         <div>
             <p class="eyebrow">Botev Internal Dashboard</p>
-            <h1>Profiles, Articles, and Recommendation Preview</h1>
+            <h1>Profiles, Subscriptions, Articles, and Recommendation Preview</h1>
             <p class="hero-copy">
                 Inspect how user tag profiles are built, browse the current article catalog,
-                and preview recommendations for a single reader before exposing them elsewhere.
+                manage publisher subscriptions, and preview recommendations for a single reader
+                before exposing them elsewhere.
             </p>
         </div>
         <div class="hero-stats">
@@ -23,7 +24,7 @@
                 <strong id="userCount">0</strong>
             </article>
             <article class="hero-stat">
-                <span class="stat-label">Articles</span>
+                <span class="stat-label">Visible Articles</span>
                 <strong id="articleCount">0</strong>
             </article>
             <article class="hero-stat">
@@ -89,6 +90,21 @@
                 Select a user to preview recommendations.
             </div>
             <div id="recommendations" class="recommendations empty-state">No recommendations yet.</div>
+        </section>
+
+        <section class="panel panel-wide">
+            <div class="panel-header">
+                <div>
+                    <p class="eyebrow">Subscription Management</p>
+                    <h2>Publisher Access Control</h2>
+                </div>
+                <span id="publisherCount" class="section-count">0</span>
+            </div>
+
+            <div id="subscriptionStatus" class="profile-summary empty-state">
+                Select a user to manage publisher subscriptions.
+            </div>
+            <div id="publishers" class="publisher-grid empty-state">No publishers available.</div>
         </section>
 
         <section class="panel panel-wide">

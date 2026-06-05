@@ -39,6 +39,9 @@ public class ArticleDocument {
     @Field(type = FieldType.Keyword)
     private String publisherName;
 
+    @Field(type = FieldType.Keyword)
+    private ArticleAccessLevel accessLevel = ArticleAccessLevel.PUBLIC;
+
     @Field(type = FieldType.Date, format = DateFormat.date_time)
     private Instant createdAt;
 
@@ -46,7 +49,7 @@ public class ArticleDocument {
     }
 
     public ArticleDocument(String id, String title, String content, List<String> topics, List<String> tags, Instant createdAt) {
-        this(id, title, content, topics, tags, null, null, null, null, createdAt);
+        this(id, title, content, topics, tags, null, null, null, null, ArticleAccessLevel.PUBLIC, createdAt);
     }
 
     public ArticleDocument(
@@ -61,6 +64,34 @@ public class ArticleDocument {
             String publisherName,
             Instant createdAt
     ) {
+        this(
+                id,
+                title,
+                content,
+                topics,
+                tags,
+                authorId,
+                authorName,
+                publisherId,
+                publisherName,
+                ArticleAccessLevel.PUBLIC,
+                createdAt
+        );
+    }
+
+    public ArticleDocument(
+            String id,
+            String title,
+            String content,
+            List<String> topics,
+            List<String> tags,
+            Long authorId,
+            String authorName,
+            Long publisherId,
+            String publisherName,
+            ArticleAccessLevel accessLevel,
+            Instant createdAt
+    ) {
         this.id = id;
         this.title = title;
         this.content = content;
@@ -70,6 +101,7 @@ public class ArticleDocument {
         this.authorName = authorName;
         this.publisherId = publisherId;
         this.publisherName = publisherName;
+        this.accessLevel = accessLevel == null ? ArticleAccessLevel.PUBLIC : accessLevel;
         this.createdAt = createdAt;
     }
 
@@ -143,6 +175,14 @@ public class ArticleDocument {
 
     public void setPublisherName(String publisherName) {
         this.publisherName = publisherName;
+    }
+
+    public ArticleAccessLevel getAccessLevel() {
+        return accessLevel == null ? ArticleAccessLevel.PUBLIC : accessLevel;
+    }
+
+    public void setAccessLevel(ArticleAccessLevel accessLevel) {
+        this.accessLevel = accessLevel == null ? ArticleAccessLevel.PUBLIC : accessLevel;
     }
 
     public Instant getCreatedAt() {

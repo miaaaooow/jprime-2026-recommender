@@ -6,14 +6,18 @@ import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 import com.example.recommendation.api.dto.CreateArticleRequest;
+import com.example.recommendation.article.model.ArticleAccessLevel;
 import com.example.recommendation.article.extractor.ArticleFeatureExtractor;
 import com.example.recommendation.article.model.ArticleDocument;
 import com.example.recommendation.article.repository.ArticleRepository;
 import com.example.recommendation.author.model.AuthorEntity;
 import com.example.recommendation.author.service.AuthorService;
 import com.example.recommendation.common.exception.BadRequestException;
+import com.example.recommendation.common.exception.ForbiddenException;
 import com.example.recommendation.publisher.model.PublisherEntity;
 import com.example.recommendation.publisher.service.PublisherService;
+import com.example.recommendation.subscription.service.UserSubscriptionService;
+import java.time.Instant;
 import java.util.List;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -36,6 +40,9 @@ class ArticleServiceTest {
     @Mock
     private ArticleTaggingService articleTaggingService;
 
+    @Mock
+    private UserSubscriptionService userSubscriptionService;
+
     private ArticleService articleService;
 
     @BeforeEach
@@ -44,7 +51,8 @@ class ArticleServiceTest {
                 articleRepository,
                 authorService,
                 publisherService,
-                articleTaggingService
+                articleTaggingService,
+                userSubscriptionService
         );
     }
 
@@ -55,6 +63,7 @@ class ArticleServiceTest {
                 "The government outlined new artificial intelligence rules.",
                 7L,
                 3L,
+                ArticleAccessLevel.SUBSCRIBERS_ONLY,
                 null,
                 null
         );
@@ -79,6 +88,7 @@ class ArticleServiceTest {
         assertThat(article.getAuthorName()).isEqualTo("Marta Ivanova");
         assertThat(article.getPublisherId()).isEqualTo(3L);
         assertThat(article.getPublisherName()).isEqualTo("Botev Newsroom");
+        assertThat(article.getAccessLevel()).isEqualTo(ArticleAccessLevel.SUBSCRIBERS_ONLY);
         assertThat(article.getTopics()).containsExactly("politics", "technology");
         assertThat(article.getTags()).containsExactly("ai", "policy");
     }
@@ -90,6 +100,7 @@ class ArticleServiceTest {
                 "Text",
                 7L,
                 3L,
+                null,
                 null,
                 null
         );
@@ -106,6 +117,64 @@ class ArticleServiceTest {
                 .hasMessage("Author 7 does not belong to publisher 3.");
 
         verifyNoInteractions(articleRepository, articleTaggingService);
+    }
+
+    @Test
+    void getAllArticlesWithoutUserIdReturnsOnlyPublicArticles() {
+        ArticleDocument publicArticle = new ArticleDocument(
+                "public-1",
+                "Public",
+                "...",
+                List.of("ai"),
+                List.of("ml"),
+                7L,
+                "Marta Ivanova",
+                3L,
+                "Botev Newsroom",
+                ArticleAccessLevel.PUBLIC,
+                Instant.now()
+        );
+        ArticleDocument premiumArticle = new ArticleDocument(
+                "premium-1",
+                "Premium",
+                "...",
+                List.of("ai"),
+                List.of("ml"),
+                7L,
+                "Marta Ivanova",
+                3L,
+                "Botev Newsroom",
+                ArticleAccessLevel.SUBSCRIBERS_ONLY,
+                Instant.now()
+        );
+
+        when(articleRepository.findAll()).thenReturn(List.of(publicArticle, premiumArticle));
+
+        assertThat(articleService.getAllArticles()).extracting(ArticleDocument::getId).containsExactly("public-1");
+    }
+
+    @Test
+    void getArticleRejectsSubscriptionOnlyArticleForUnsubscribedUser() {
+        ArticleDocument premiumArticle = new ArticleDocument(
+                "premium-1",
+                "Premium",
+                "...",
+                List.of("ai"),
+                List.of("ml"),
+                7L,
+                "Marta Ivanova",
+                3L,
+                "Botev Newsroom",
+                ArticleAccessLevel.SUBSCRIBERS_ONLY,
+                Instant.now()
+        );
+
+        when(articleRepository.findById("premium-1")).thenReturn(java.util.Optional.of(premiumArticle));
+        when(userSubscriptionService.canAccessArticle(9L, premiumArticle)).thenReturn(false);
+
+        assertThatThrownBy(() -> articleService.getArticle("premium-1", 9L))
+                .isInstanceOf(ForbiddenException.class)
+                .hasMessage("Article premium-1 requires a publisher subscription.");
     }
 
     private static void setId(Object target, Long id) {

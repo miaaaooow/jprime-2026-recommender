@@ -16,6 +16,8 @@ import com.example.recommendation.author.repository.AuthorRepository;
 import com.example.recommendation.profile.service.UserProfileService;
 import com.example.recommendation.publisher.model.PublisherEntity;
 import com.example.recommendation.publisher.repository.PublisherRepository;
+import com.example.recommendation.subscription.model.UserPublisherSubscriptionEntity;
+import com.example.recommendation.subscription.repository.UserPublisherSubscriptionRepository;
 import com.example.recommendation.user.model.UserArticleInteractionEntity;
 import com.example.recommendation.user.model.UserArticleInteractionType;
 import com.example.recommendation.user.model.UserEntity;
@@ -44,6 +46,7 @@ class ArticleTestDatasetLoaderTest {
         AuthorRepository authorRepository = mock(AuthorRepository.class);
         UserRepository userRepository = mock(UserRepository.class);
         UserArticleInteractionRepository interactionRepository = mock(UserArticleInteractionRepository.class);
+        UserPublisherSubscriptionRepository subscriptionRepository = mock(UserPublisherSubscriptionRepository.class);
         UserProfileService userProfileService = mock(UserProfileService.class);
         DefaultResourceLoader resourceLoader = new DefaultResourceLoader();
 
@@ -55,7 +58,9 @@ class ArticleTestDatasetLoaderTest {
         AtomicLong userIds = new AtomicLong(1);
         List<ArticleDocument> savedArticles = new ArrayList<>();
         List<UserArticleInteractionEntity> savedInteractions = new ArrayList<>();
+        List<UserPublisherSubscriptionEntity> savedSubscriptions = new ArrayList<>();
         Set<String> interactionKeys = new HashSet<>();
+        Set<String> subscriptionKeys = new HashSet<>();
 
         when(publisherRepository.findByNameIgnoreCase(anyString())).thenAnswer(invocation ->
                 Optional.ofNullable(publishersByKey.get(normalizeKey(invocation.getArgument(0)))));
@@ -109,6 +114,17 @@ class ArticleTestDatasetLoaderTest {
             ));
             return interaction;
         });
+        when(subscriptionRepository.existsByUserIdAndPublisherId(anyLong(), anyLong()))
+                .thenAnswer(invocation -> subscriptionKeys.contains(subscriptionKey(
+                        invocation.getArgument(0),
+                        invocation.getArgument(1)
+                )));
+        when(subscriptionRepository.save(any(UserPublisherSubscriptionEntity.class))).thenAnswer(invocation -> {
+            UserPublisherSubscriptionEntity subscription = invocation.getArgument(0);
+            savedSubscriptions.add(subscription);
+            subscriptionKeys.add(subscriptionKey(subscription.getUserId(), subscription.getPublisherId()));
+            return subscription;
+        });
 
         ArticleTestDatasetLoader loader = new ArticleTestDatasetLoader(
                 articleRepository,
@@ -116,6 +132,7 @@ class ArticleTestDatasetLoaderTest {
                 authorRepository,
                 userRepository,
                 interactionRepository,
+                subscriptionRepository,
                 userProfileService,
                 new ObjectMapper().findAndRegisterModules(),
                 resourceLoader,
@@ -123,7 +140,8 @@ class ArticleTestDatasetLoaderTest {
                 "classpath:testdata/publishers.json",
                 "classpath:testdata/authors.json",
                 "classpath:testdata/users.json",
-                "classpath:testdata/interactions.json"
+                "classpath:testdata/interactions.json",
+                "classpath:testdata/subscriptions.json"
         );
 
         loader.run(new DefaultApplicationArguments(new String[0]));
@@ -133,6 +151,7 @@ class ArticleTestDatasetLoaderTest {
         assertThat(usersByKey).hasSize(4);
         assertThat(savedArticles).hasSize(11);
         assertThat(savedInteractions).hasSize(12);
+        assertThat(savedSubscriptions).hasSize(7);
 
         ArticleDocument lisbon = savedArticles.stream()
                 .filter(article -> article.getId().equals("tourism-lisbon-slow-weekend"))
@@ -147,12 +166,27 @@ class ArticleTestDatasetLoaderTest {
         assertThat(lisbon.getAuthorId()).isEqualTo(
                 authorsByKey.get(authorKey(lisbon.getPublisherId(), "Elena Rossi")).getId()
         );
+        assertThat(lisbon.getAccessLevel()).isEqualTo(com.example.recommendation.article.model.ArticleAccessLevel.PUBLIC);
+
+        ArticleDocument cedarPremium = savedArticles.stream()
+                .filter(article -> article.getId().equals("fashion-repair-economy"))
+                .findFirst()
+                .orElseThrow();
+        assertThat(cedarPremium.getAccessLevel()).isEqualTo(
+                com.example.recommendation.article.model.ArticleAccessLevel.SUBSCRIBERS_ONLY
+        );
 
         UserEntity mila = usersByKey.get(normalizeKey("mila.travel"));
         assertThat(savedInteractions).anySatisfy(interaction -> {
             assertThat(interaction.getUserId()).isEqualTo(mila.getId());
             assertThat(interaction.getArticleId()).isEqualTo("tourism-lisbon-slow-weekend");
             assertThat(interaction.getInteractionType()).isEqualTo(UserArticleInteractionType.LIKE);
+        });
+        assertThat(savedSubscriptions).anySatisfy(subscription -> {
+            assertThat(subscription.getUserId()).isEqualTo(mila.getId());
+            assertThat(subscription.getPublisherId()).isEqualTo(
+                    publishersByKey.get(normalizeKey("North Star Dispatch")).getId()
+            );
         });
 
         ArgumentCaptor<Long> rebuiltUserIds = ArgumentCaptor.forClass(Long.class);
@@ -172,6 +206,10 @@ class ArticleTestDatasetLoaderTest {
 
     private static String interactionKey(Long userId, String articleId, UserArticleInteractionType interactionType) {
         return userId + ":" + articleId + ":" + interactionType.name();
+    }
+
+    private static String subscriptionKey(Long userId, Long publisherId) {
+        return userId + ":" + publisherId;
     }
 
     private static void setId(Object target, Long id) {

@@ -1,5 +1,6 @@
 package com.example.recommendation.article.bootstrap;
 
+import com.example.recommendation.article.model.ArticleAccessLevel;
 import com.example.recommendation.article.model.ArticleDocument;
 import com.example.recommendation.article.repository.ArticleRepository;
 import com.example.recommendation.author.model.AuthorEntity;
@@ -7,6 +8,8 @@ import com.example.recommendation.author.repository.AuthorRepository;
 import com.example.recommendation.profile.service.UserProfileService;
 import com.example.recommendation.publisher.model.PublisherEntity;
 import com.example.recommendation.publisher.repository.PublisherRepository;
+import com.example.recommendation.subscription.model.UserPublisherSubscriptionEntity;
+import com.example.recommendation.subscription.repository.UserPublisherSubscriptionRepository;
 import com.example.recommendation.user.model.UserArticleInteractionEntity;
 import com.example.recommendation.user.model.UserArticleInteractionType;
 import com.example.recommendation.user.model.UserEntity;
@@ -43,6 +46,7 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
     private final AuthorRepository authorRepository;
     private final UserRepository userRepository;
     private final UserArticleInteractionRepository userArticleInteractionRepository;
+    private final UserPublisherSubscriptionRepository subscriptionRepository;
     private final UserProfileService userProfileService;
     private final ObjectMapper objectMapper;
     private final ResourceLoader resourceLoader;
@@ -51,6 +55,7 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
     private final String authorResourceLocation;
     private final String userResourceLocation;
     private final String interactionResourceLocation;
+    private final String subscriptionResourceLocation;
 
     public ArticleTestDatasetLoader(
             ArticleRepository articleRepository,
@@ -58,6 +63,7 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
             AuthorRepository authorRepository,
             UserRepository userRepository,
             UserArticleInteractionRepository userArticleInteractionRepository,
+            UserPublisherSubscriptionRepository subscriptionRepository,
             UserProfileService userProfileService,
             ObjectMapper objectMapper,
             ResourceLoader resourceLoader,
@@ -65,13 +71,15 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
             @Value("${app.test-data.articles.publishers-resource}") String publisherResourceLocation,
             @Value("${app.test-data.articles.authors-resource}") String authorResourceLocation,
             @Value("${app.test-data.articles.users-resource}") String userResourceLocation,
-            @Value("${app.test-data.articles.interactions-resource}") String interactionResourceLocation
+            @Value("${app.test-data.articles.interactions-resource}") String interactionResourceLocation,
+            @Value("${app.test-data.articles.subscriptions-resource}") String subscriptionResourceLocation
     ) {
         this.articleRepository = articleRepository;
         this.publisherRepository = publisherRepository;
         this.authorRepository = authorRepository;
         this.userRepository = userRepository;
         this.userArticleInteractionRepository = userArticleInteractionRepository;
+        this.subscriptionRepository = subscriptionRepository;
         this.userProfileService = userProfileService;
         this.objectMapper = objectMapper;
         this.resourceLoader = resourceLoader;
@@ -80,6 +88,7 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
         this.authorResourceLocation = authorResourceLocation;
         this.userResourceLocation = userResourceLocation;
         this.interactionResourceLocation = interactionResourceLocation;
+        this.subscriptionResourceLocation = subscriptionResourceLocation;
     }
 
     @Override
@@ -106,14 +115,20 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
                 usersByKey,
                 articles
         );
+        int subscriptionCount = seedSubscriptions(
+                resourceLoader.getResource(subscriptionResourceLocation),
+                usersByKey,
+                publishersByKey
+        );
         rebuildProfiles(usersByKey.values());
         log.info(
-                "Loaded {} publishers, {} authors, {} test dataset articles, {} users, and {} interactions",
+                "Loaded {} publishers, {} authors, {} test dataset articles, {} users, {} interactions, and {} subscriptions",
                 publishersByKey.size(),
                 authorsByKey.size(),
                 articles.size(),
                 usersByKey.size(),
-                interactionCount
+                interactionCount,
+                subscriptionCount
         );
     }
 
@@ -221,6 +236,26 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
         return dataset.size();
     }
 
+    int seedSubscriptions(
+            Resource resource,
+            Map<String, UserEntity> usersByKey,
+            Map<String, PublisherEntity> publishersByKey
+    ) throws IOException {
+        List<DatasetSubscription> dataset = readResource(resource, new TypeReference<List<DatasetSubscription>>() {
+        });
+
+        for (DatasetSubscription subscription : dataset) {
+            UserEntity user = requireUser(subscription.username(), usersByKey);
+            PublisherEntity publisher = requirePublisher(subscription.publisherName(), publishersByKey);
+
+            if (!subscriptionRepository.existsByUserIdAndPublisherId(user.getId(), publisher.getId())) {
+                subscriptionRepository.save(new UserPublisherSubscriptionEntity(user.getId(), publisher.getId()));
+            }
+        }
+
+        return dataset.size();
+    }
+
     void rebuildProfiles(Iterable<UserEntity> users) {
         for (UserEntity user : users) {
             userProfileService.rebuildProfile(user.getId());
@@ -251,6 +286,7 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
                 author.getName(),
                 publisher.getId(),
                 publisher.getName(),
+                article.accessLevel() == null ? ArticleAccessLevel.PUBLIC : article.accessLevel(),
                 article.createdAt()
         );
     }
@@ -368,6 +404,12 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
     ) {
     }
 
+    private record DatasetSubscription(
+            String username,
+            String publisherName
+    ) {
+    }
+
     private record DatasetArticle(
             String id,
             String title,
@@ -376,6 +418,7 @@ public class ArticleTestDatasetLoader implements ApplicationRunner {
             List<String> tags,
             String authorName,
             String publisherName,
+            ArticleAccessLevel accessLevel,
             Instant createdAt
     ) {
     }

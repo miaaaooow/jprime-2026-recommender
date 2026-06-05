@@ -1,5 +1,6 @@
 package com.example.recommendation.api.dto;
 
+import com.example.recommendation.article.model.ArticleAccessLevel;
 import com.example.recommendation.article.model.ArticleDocument;
 import java.time.Instant;
 
@@ -8,6 +9,7 @@ public record ArticleCatalogItemResponse(
         String title,
         Long authorId,
         String authorName,
+        ArticleAccessLevel accessLevel,
         Instant createdAt
 ) {
     public static ArticleCatalogItemResponse from(ArticleDocument article) {
@@ -16,6 +18,7 @@ public record ArticleCatalogItemResponse(
                 article.getTitle(),
                 article.getAuthorId(),
                 article.getAuthorName(),
+                article.getAccessLevel(),
                 article.getCreatedAt()
         );
     }

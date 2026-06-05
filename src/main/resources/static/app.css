@@ -71,7 +71,8 @@ body::before {
 
 .hero h1,
 .panel h2,
-.profile-card h3 {
+.profile-card h3,
+.publisher-card h3 {
     margin: 0;
     font-family: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Georgia, serif;
     font-weight: 700;
@@ -102,7 +103,8 @@ body::before {
 .profile-card,
 .article-card,
 .recommendation-card,
-.user-card {
+.user-card,
+.publisher-card {
     border: 1px solid var(--line);
     border-radius: 24px;
     background: var(--panel);
@@ -205,7 +207,8 @@ body::before {
 .profile-card,
 .article-card,
 .recommendation-card,
-.user-card {
+.user-card,
+.publisher-card {
     padding: 18px;
 }
 
@@ -231,7 +234,8 @@ body::before {
 .chip-list,
 .user-cards,
 .recommendations,
-.article-grid {
+.article-grid,
+.publisher-grid {
     display: grid;
     gap: 12px;
 }
@@ -334,7 +338,8 @@ body::before {
 }
 
 .recommendations,
-.article-grid {
+.article-grid,
+.publisher-grid {
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
 }
 
@@ -344,6 +349,60 @@ body::before {
 
 .article-card {
     background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(247, 241, 230, 0.92));
+}
+
+.publisher-card {
+    display: grid;
+    gap: 14px;
+    background: linear-gradient(180deg, rgba(255, 252, 246, 0.98), rgba(246, 240, 228, 0.94));
+}
+
+.publisher-card.is-subscribed {
+    border-color: rgba(95, 20, 12, 0.24);
+    background: linear-gradient(180deg, rgba(255, 248, 237, 0.98), rgba(250, 240, 220, 0.94));
+}
+
+.publisher-card-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    align-items: start;
+}
+
+.publisher-actions {
+    display: flex;
+    justify-content: flex-start;
+}
+
+.action-button {
+    min-height: 42px;
+    padding: 0 16px;
+    border: 1px solid rgba(95, 20, 12, 0.22);
+    border-radius: 999px;
+    background: linear-gradient(180deg, var(--accent), #7f2318);
+    color: #fff9f0;
+    font: inherit;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 140ms ease, box-shadow 140ms ease, border-color 140ms ease;
+}
+
+.action-button:hover,
+.action-button:focus-visible {
+    transform: translateY(-1px);
+    box-shadow: 0 12px 26px rgba(95, 20, 12, 0.18);
+}
+
+.action-button.is-secondary {
+    background: rgba(255, 250, 243, 0.92);
+    color: var(--accent-deep);
+}
+
+.action-button:disabled {
+    opacity: 0.62;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
 }
 
 .card-meta {
@@ -377,6 +436,11 @@ body::before {
 
 .empty-state {
     color: var(--muted);
+}
+
+.status-error {
+    color: var(--accent-deep);
+    font-weight: 700;
 }
 
 .stack {
@@ -430,7 +494,8 @@ body::before {
 
     .recommendations,
     .article-grid,
-    .user-cards {
+    .user-cards,
+    .publisher-grid {
         grid-template-columns: 1fr;
     }
 }
