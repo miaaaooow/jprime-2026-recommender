@@ -4,6 +4,7 @@ import com.example.recommendation.author.repository.AuthorRepository;
 import com.example.recommendation.article.repository.ArticleRepository;
 import com.example.recommendation.profile.repository.UserProfileRepository;
 import com.example.recommendation.publisher.repository.PublisherRepository;
+import com.example.recommendation.subscription.repository.UserPublisherSubscriptionRepository;
 import com.example.recommendation.user.repository.UserArticleInteractionRepository;
 import com.example.recommendation.user.repository.UserArticleLikeRepository;
 import com.example.recommendation.user.repository.UserRepository;
@@ -18,7 +19,8 @@ import org.springframework.data.jpa.repository.config.EnableJpaRepositories;
         UserArticleLikeRepository.class,
         UserArticleInteractionRepository.class,
         PublisherRepository.class,
-        AuthorRepository.class
+        AuthorRepository.class,
+        UserPublisherSubscriptionRepository.class
 })
 @EnableElasticsearchRepositories(basePackageClasses = {
         ArticleRepository.class,
